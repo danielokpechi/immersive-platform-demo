@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   SENDERS, CHAT_SCRIPT, SHOP, QUIZ, POLL, CHAT_SUMMARY, READS,
   IRIS_CHIPS, IRIS_REPLIES, IRIS_FALLBACK, type ShopItem, type Sender,
@@ -17,6 +17,8 @@ const I = {
   buy: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>,
   check: <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
   bag: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>,
+  home: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5"/></svg>,
+  user: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>,
 };
 
 // A generic red-shield crest (Arsenal-evocative, not the real trademarked crest).
@@ -34,6 +36,93 @@ const Crest = ({ size = 40 }: { size?: number }) => (
 
 const Stars = ({ n, reviews }: { n: number; reviews: number }) => (
   <div className="stars"><span className="st">{'★★★★★'.slice(0, Math.round(n))}{'☆☆☆☆☆'.slice(0, 5 - Math.round(n))}</span>{reviews}</div>
+);
+
+/* ── original, brand-neutral merch visuals (studio-style) ── */
+const Emblem = ({ x = 0, y = 0, s = 1 }: { x?: number; y?: number; s?: number }) => (
+  <g transform={`translate(${x} ${y}) scale(${s})`}>
+    <path d="M15 2 27 6.5V16q0 10-12 13Q3 26 3 16V6.5Z" fill="#d9c79a" stroke="#fff" strokeWidth="1.2" />
+    <path d="M6 14h18v3H6z" fill="#7a1220" opacity=".9" />
+    <circle cx="15" cy="10" r="2.4" fill="#7a1220" opacity=".9" />
+  </g>
+);
+const Jersey = () => (
+  <svg viewBox="0 0 240 240" width="84%" height="84%" style={{ overflow: 'visible' }}>
+    <defs>
+      <linearGradient id="jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ef2130" /><stop offset="1" stopColor="#a8000d" /></linearGradient>
+      <linearGradient id="jsh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#000" stopOpacity=".22" /><stop offset=".28" stopColor="#000" stopOpacity="0" /><stop offset=".72" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".24" /></linearGradient>
+      <clipPath id="jclip"><path d="M74 48 98 56Q120 76 142 56L166 48 214 92Q218 99 210 106L180 120 186 200Q186 208 178 208L62 208Q54 208 54 200L60 120 30 106Q22 99 26 92Z" /></clipPath>
+    </defs>
+    <path d="M74 48 98 56Q120 76 142 56L166 48 214 92Q218 99 210 106L180 120 186 200Q186 208 178 208L62 208Q54 208 54 200L60 120 30 106Q22 99 26 92Z" fill="url(#jg)" stroke="#7c0009" strokeWidth="1.5" />
+    <g clipPath="url(#jclip)">
+      <rect x="112" y="40" width="4" height="180" fill="#fff" opacity=".14" />
+      <rect x="126" y="40" width="4" height="180" fill="#fff" opacity=".14" />
+      <rect x="98" y="40" width="4" height="180" fill="#fff" opacity=".14" />
+      <path d="M0 96 240 96 240 118 0 118Z" fill="#fff" opacity=".9" transform="translate(0 -2)" clipPath="url(#jclip)" />
+    </g>
+    <path d="M26 92 30 106 46 100 42 86Z" fill="#fff" />
+    <path d="M214 92 210 106 194 100 198 86Z" fill="#fff" />
+    <path d="M98 56Q120 76 142 56L135 68Q120 84 105 68Z" fill="#fff" />
+    <Emblem x={106} y={88} s={0.9} />
+    <path d="M74 48 98 56Q120 76 142 56L166 48 214 92Q218 99 210 106L180 120 186 200Q186 208 178 208L62 208Q54 208 54 200L60 120 30 106Q22 99 26 92Z" fill="url(#jsh)" />
+  </svg>
+);
+const Cap = () => (
+  <svg viewBox="0 0 240 200" width="88%" height="88%" style={{ overflow: 'visible' }}>
+    <defs>
+      <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ef2130" /><stop offset="1" stopColor="#a8000d" /></linearGradient>
+    </defs>
+    <path d="M34 150Q120 118 206 150Q208 174 120 180Q32 174 34 150Z" fill="url(#cg)" stroke="#7c0009" strokeWidth="1.5" />
+    <path d="M48 154Q42 58 120 54Q198 58 192 154Q120 136 48 154Z" fill="url(#cg)" stroke="#7c0009" strokeWidth="1.5" />
+    <path d="M120 55 120 146M86 58Q104 100 92 148M154 58Q136 100 148 148" stroke="#000" strokeOpacity=".14" strokeWidth="2" fill="none" />
+    <circle cx="120" cy="56" r="5" fill="#a8000d" />
+    <ellipse cx="94" cy="86" rx="42" ry="26" fill="#fff" opacity=".12" />
+    <Emblem x={105} y={82} s={1} />
+  </svg>
+);
+const Scarf = () => (
+  <svg viewBox="0 0 240 240" width="72%" height="92%" style={{ overflow: 'visible' }}>
+    <defs><linearGradient id="scg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ef2130" /><stop offset="1" stopColor="#a8000d" /></linearGradient></defs>
+    {[{ x: 66, h: 156 }, { x: 118, h: 176 }].map((c, i) => (
+      <g key={i}>
+        <rect x={c.x} y="26" width="48" height={c.h} rx="5" fill="url(#scg)" stroke="#7c0009" strokeWidth="1.2" />
+        <rect x={c.x} y="44" width="48" height="12" fill="#fff" opacity=".92" />
+        <rect x={c.x} y="64" width="48" height="5" fill="#fff" opacity=".55" />
+        <rect x={c.x} y={26 + c.h - 34} width="48" height="12" fill="#fff" opacity=".92" />
+        {[0, 1, 2, 3, 4].map((f) => <rect key={f} x={c.x + 3 + f * 9} y={26 + c.h} width="5" height="16" fill="#a8000d" />)}
+      </g>
+    ))}
+    <Emblem x={126} y={92} s={1.1} />
+  </svg>
+);
+const Hoodie = () => (
+  <svg viewBox="0 0 240 240" width="86%" height="86%" style={{ overflow: 'visible' }}>
+    <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a3f47" /><stop offset="1" stopColor="#22262c" /></linearGradient></defs>
+    <path d="M70 52 96 46Q120 40 144 46L170 52 214 96Q218 103 210 110L182 122 188 202Q188 210 180 210L60 210Q52 210 52 202L58 122 30 110Q22 103 26 96Z" fill="url(#hg)" stroke="#171a1e" strokeWidth="1.5" />
+    <path d="M96 46Q120 84 144 46Q150 70 120 78Q90 70 96 46Z" fill="#171a1e" opacity=".85" />
+    <rect x="86" y="150" width="68" height="40" rx="7" fill="#000" opacity=".22" />
+    <path d="M112 78 108 116M128 78 132 116" stroke="#cfd3d8" strokeWidth="3" strokeLinecap="round" />
+    <circle cx="108" cy="118" r="3.5" fill="#cfd3d8" /><circle cx="132" cy="118" r="3.5" fill="#cfd3d8" />
+  </svg>
+);
+const PRODUCT: Record<string, () => ReactElement> = { shirt: Jersey, cap: Cap, scarf: Scarf, hoodie: Hoodie };
+
+// Abstract editorial art for Reads — floodlit stadium night, original.
+const ReadArt = ({ hue = 200, seed = 0 }: { hue?: number; seed?: number }) => (
+  <svg viewBox="0 0 320 200" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id={`ra${seed}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={`hsl(${hue} 45% 22%)`} /><stop offset="1" stopColor={`hsl(${hue} 55% 8%)`} /></linearGradient>
+      <radialGradient id={`rl${seed}`} cx="50%" cy="0%" r="80%"><stop offset="0" stopColor="#fff" stopOpacity=".5" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
+    </defs>
+    <rect width="320" height="200" fill={`url(#ra${seed})`} />
+    <polygon points="40,0 84,0 60,120 30,120" fill="#fff" opacity=".08" />
+    <polygon points="236,0 280,0 290,120 260,120" fill="#fff" opacity=".08" />
+    <ellipse cx="160" cy="210" rx="180" ry="70" fill={`hsl(${hue} 60% 30%)`} opacity=".55" />
+    <path d="M0 150 320 150M160 150 160 92M110 150Q160 132 210 150" stroke="#fff" strokeOpacity=".28" strokeWidth="2" fill="none" />
+    <circle cx="160" cy="120" r="16" stroke="#fff" strokeOpacity=".28" strokeWidth="2" fill="none" />
+    {[42, 78, 120, 205, 250, 288].map((x, i) => <circle key={i} cx={x} cy={60 + (i % 3) * 12} r={2 + (i % 2)} fill="#fff" opacity=".5" />)}
+    <rect width="320" height="200" fill="#000" opacity=".12" />
+  </svg>
 );
 
 type Msg =
@@ -274,29 +363,62 @@ export default function App() {
             <div className="section-pad">
               <div className="section-head"><div className="section-title">Shop</div><div className="arrows"><button className="arrow-btn">{I.chevL}</button><button className="arrow-btn">{I.chevR}</button></div></div>
               <div className="shop-row">
-                {SHOP.map((it) => (
-                  <div className="shop-card" key={it.id}>
-                    <div className="shop-img"><span className="glow" style={{ background: `radial-gradient(70% 70% at 50% 40%, ${it.hue}, #17130f)` }} /><span className="shop-jersey" style={{ background: `linear-gradient(160deg, ${it.hue}, #0009), repeating-linear-gradient(90deg, #fff2 0 6px, transparent 6px 14px)` }} /></div>
-                    <div className="shop-info">
-                      <div className="shop-name">{it.name}</div>
-                      <Stars n={it.rating} reviews={it.reviews} />
-                      <div className="price"><small>£</small>{it.price.toFixed(2)}</div>
-                      <button className="buy" onClick={() => { setCartItem(it); setCheckout('cart'); }}>{I.buy}Buy now</button>
+                {SHOP.map((it) => {
+                  const Art = PRODUCT[it.id] ?? Jersey;
+                  return (
+                    <div className="shop-card" key={it.id}>
+                      <div className="shop-img">{it.tag && <span className="shop-tag">{it.tag}</span>}<Art /></div>
+                      <div className="shop-info">
+                        <div className="shop-name">{it.name}</div>
+                        <Stars n={it.rating} reviews={it.reviews} />
+                        <div className="price"><small>£</small>{it.price.toFixed(2)}</div>
+                        <button className="buy" onClick={() => { setCartItem(it); setCheckout('cart'); }}>{I.buy}Buy now</button>
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* house ad */}
+            <div className="ad">
+              <svg className="ad-orb" viewBox="0 0 120 120" aria-hidden><circle cx="60" cy="60" r="40" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="2" /><path d="M60 20l12 18-12 14-12-14zM32 52l20 4 4 20-18-8zM88 52l-20 4-4 20 18-8z" fill="#fff" fillOpacity=".22" /></svg>
+              <div className="ad-streak" />
+              <div className="ad-txt"><span className="ad-kick">Matchday, live</span><b>NEVER MISS<br /><span className="y">A MOMENT</span></b></div>
+            </div>
+            {/* reads */}
+            <div className="section-pad" style={{ paddingTop: 22 }}>
+              <div className="section-head"><div className="section-title">Reads</div><div className="arrows"><button className="arrow-btn">{I.chevL}</button><button className="arrow-btn">{I.chevR}</button></div></div>
+              {READS[0] && (
+                <div className="read-hero">
+                  <div className="read-hero-img"><ReadArt hue={352} seed={0} /></div>
+                  <div className="read-hero-body">
+                    <div className="read-kicker">{READS[0].kicker}</div>
+                    <div className="read-hero-title">{READS[0].title}</div>
+                    <div className="read-time">{READS[0].meta}</div>
+                  </div>
+                </div>
+              )}
+              <div className="read-grid">
+                {READS.slice(1).map((r, i) => (
+                  <div className="read-mini" key={r.id}>
+                    <div className="read-mini-img"><ReadArt hue={i === 0 ? 210 : 40} seed={i + 1} /></div>
+                    <div className="read-kicker">{r.kicker}</div>
+                    <div className="read-mini-title">{r.title}</div>
+                    <div className="read-time">{r.meta}</div>
                   </div>
                 ))}
               </div>
             </div>
-            {/* ad */}
-            <div className="ad"><span className="ad-sneaker" /><div className="ad-txt"><b>BOOST</b><b className="y">YOUR RUN</b><span>adidas</span></div></div>
-            {/* reads */}
-            <div className="section-pad" style={{ paddingTop: 22 }}>
-              <div className="section-head"><div className="section-title">Reads</div><div className="arrows"><button className="arrow-btn">{I.chevL}</button><button className="arrow-btn">{I.chevR}</button></div></div>
-              {READS.map((r) => (
-                <div className="read-card" key={r.id}>
-                  <div className="read-thumb" style={{ background: `linear-gradient(135deg, ${r.hue}, #0008)` }} />
-                  <div className="read-meta"><div className="read-kicker">{r.kicker}</div><div className="read-title">{r.title}</div><div className="read-time">{r.meta}</div></div>
-                </div>
+            {/* membership banner */}
+            <div className="member">
+              <div className="member-crest"><Crest size={30} /></div>
+              <div className="member-txt"><span className="member-kick">Members' Club · 2026/27</span><b>Season membership now open</b></div>
+              <button className="member-cta">Join</button>
+            </div>
+            {/* footer nav */}
+            <div className="nav">
+              {[['home', I.home], ['shop', I.bag], ['chat', I.chat], ['you', I.user]].map(([k, ic], i) => (
+                <button key={k as string} className={`nav-btn${i === 0 ? ' on' : ''}`} aria-label={k as string}>{ic}</button>
               ))}
             </div>
             <div className="footer">Powered by <b>BoltOS</b> · Immersive Platform</div>
