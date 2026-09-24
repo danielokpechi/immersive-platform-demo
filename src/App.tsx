@@ -44,7 +44,6 @@ type Msg =
   | { id: number; type: 'poll' };
 
 const TIMES = ['just now', '1m', '2m', '5m', '12m', '20m', '25m'];
-const CARD_CYCLE: Array<'summary' | 'quiz' | 'poll'> = ['summary', 'quiz', 'poll'];
 let _uid = 1;
 const uid = () => _uid++;
 
@@ -71,40 +70,78 @@ export default function App() {
   const [checkout, setCheckout] = useState<'cart' | 'success' | null>(null);
 
   const scriptIdx = useRef(2);
-  const cardIdx = useRef(1);
   const timeIdx = useRef(0);
-  const tickN = useRef(0);
+  const shopIdx = useRef(0);
   const chatBottom = useRef<HTMLDivElement>(null);
 
-  // Autoplay: stream the chat; pause on any interaction; resume after 12s idle.
+  // Autoplay director: a self-driving demo tour that streams chat, opens IRIS,
+  // answers a quiz, votes a poll, and runs a shop checkout — on a loop.
+  // Any interaction pauses it ("you're in control"); it resumes after idle.
   useEffect(() => {
-    let timer: number | undefined;
-    let idle: number | undefined;
-    let paused = false;
+    const paused = { current: false };
+    let stepTimer: number | undefined;
+    let idleTimer: number | undefined;
 
-    const tick = () => {
-      tickN.current++;
-      setMsgs((prev) => {
-        let item: Msg;
-        if (tickN.current % 5 === 0) {
-          item = { id: uid(), type: CARD_CYCLE[cardIdx.current++ % CARD_CYCLE.length] } as Msg;
-        } else {
-          const sc = CHAT_SCRIPT[scriptIdx.current++ % CHAT_SCRIPT.length];
-          item = { id: uid(), type: 'in', sender: SENDERS[sc.s % SENDERS.length], text: sc.text, time: TIMES[timeIdx.current++ % TIMES.length] };
-        }
-        return [...prev, item].slice(-40);
-      });
+    const nextTime = () => TIMES[timeIdx.current++ % TIMES.length];
+    const streamMsg = () => {
+      const sc = CHAT_SCRIPT[scriptIdx.current++ % CHAT_SCRIPT.length];
+      setMsgs((p) => [...p, { id: uid(), type: 'in', sender: SENDERS[sc.s % SENDERS.length], text: sc.text, time: nextTime() } as Msg].slice(-40));
     };
-    const loop = () => { timer = window.setTimeout(() => { if (!paused) tick(); loop(); }, 3000); };
+    const addCard = (type: 'summary' | 'quiz' | 'poll') =>
+      setMsgs((p) => [...p, { id: uid(), type } as Msg].slice(-40));
+
+    // Flat timeline — each step guarded by `paused`, so a pause suspends the
+    // whole tour cleanly and it picks back up where it left off.
+    const timeline: Array<{ run: () => void; gap: number }> = [
+      { run: streamMsg, gap: 2600 },
+      { run: streamMsg, gap: 2600 },
+      // quiz: appears, then answers itself
+      { run: () => { setQuizPick(null); addCard('quiz'); }, gap: 2200 },
+      { run: () => setQuizPick(QUIZ.correct), gap: 3400 },
+      { run: streamMsg, gap: 2600 },
+      // IRIS: opens, asks a question, shows the reply, closes
+      { run: () => { setIrisThread([]); setIrisOpen(true); }, gap: 1400 },
+      { run: () => { setIrisThread([{ who: 'you', text: 'When is the next game?' }]); setIrisTyping(true); }, gap: 1400 },
+      { run: () => { setIrisTyping(false); setIrisThread((p) => [...p, { who: 'bot', text: IRIS_REPLIES['When is the next game?'] }]); }, gap: 4400 },
+      { run: () => setIrisOpen(false), gap: 1300 },
+      { run: streamMsg, gap: 2600 },
+      // poll: appears, then casts a vote
+      { run: () => { setPollVote(null); addCard('poll'); }, gap: 2200 },
+      { run: () => setPollVote(0), gap: 3400 },
+      { run: streamMsg, gap: 2600 },
+      // shop: opens an item, checks out, confirms, closes
+      { run: () => { setCartItem(SHOP[shopIdx.current % SHOP.length]); setCheckout('cart'); }, gap: 2800 },
+      { run: () => setCheckout('success'), gap: 2900 },
+      { run: () => { setCheckout(null); setCartItem(null); shopIdx.current++; }, gap: 1800 },
+    ];
+
+    let idx = 0;
+    const play = () => {
+      if (paused.current) { stepTimer = window.setTimeout(play, 800); return; }
+      const step = timeline[idx % timeline.length];
+      idx++;
+      step.run();
+      stepTimer = window.setTimeout(play, step.gap);
+    };
+
     const onInteract = () => {
-      paused = true; setInteracting(true);
-      if (idle) window.clearTimeout(idle);
-      idle = window.setTimeout(() => { paused = false; setInteracting(false); }, 12000);
+      if (!paused.current) { paused.current = true; setInteracting(true); }
+      if (idleTimer) window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(() => {
+        paused.current = false; setInteracting(false);
+        // hand back a clean stage before the tour resumes
+        setIrisOpen(false); setCheckout(null); setCartItem(null);
+      }, 9000);
     };
+
     const evs: Array<[string, boolean]> = [['pointerdown', false], ['keydown', false], ['touchstart', false], ['wheel', true], ['scroll', true]];
     evs.forEach(([t, c]) => window.addEventListener(t, onInteract, { passive: true, capture: c }));
-    loop();
-    return () => { if (timer) clearTimeout(timer); if (idle) clearTimeout(idle); evs.forEach(([t, c]) => window.removeEventListener(t, onInteract, { capture: c })); };
+    stepTimer = window.setTimeout(play, 1600);
+    return () => {
+      if (stepTimer) clearTimeout(stepTimer);
+      if (idleTimer) clearTimeout(idleTimer);
+      evs.forEach(([t, c]) => window.removeEventListener(t, onInteract, { capture: c }));
+    };
   }, []);
 
   // keep expanded chat pinned to the newest message
@@ -205,7 +242,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="auto-chip" style={{ opacity: interacting ? 0 : 1 }}><span className="dot" />AUTO</div>
+        <div className={`auto-chip${interacting ? ' paused' : ''}`}><span className="dot" />{interacting ? "YOU'RE IN CONTROL" : 'AUTO'}</div>
 
         <div className="scroll">
           {/* hero */}
